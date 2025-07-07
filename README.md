@@ -331,18 +331,31 @@ npm install
 - Ensure backend is returning data for the specific SDG
 - Verify field names match between frontend and backend
 
-## 📊 Data Structure
+## 📊 Data Structure & Sources
 
 ### Available Data:
 - **7 SDGs** with comprehensive indicators
 - **Pakistani cities** with province classification
-- **5 years** of sample data (2020-2024)
-- **18+ data points** per SDG
+- **5 years** of data (2020-2024)
+- **18+ data points** per SDG across multiple cities
+
+### Data Sources:
+- **Government Resources**: Official Pakistani government statistics and reports
+- **International Organizations**: World Bank, UN agencies, and development partners
+- **Research Institutions**: Academic and policy research data
+- **Testing Data**: Dummy data added during application development and testing phases
 
 ### Database Schema:
 ```
 SDGInfo → Cities → SDG1, SDG2, SDG3, SDG4, SDG6, SDG7, SDG11
 ```
+
+### Data Categories:
+- **Real Data**: Sourced from official government and international organization reports
+- **Sample Data**: Representative data for demonstration and testing purposes
+- **Dummy Data**: Test data created during application development for functionality testing
+
+**Note**: The application contains a mix of real statistical data from credible sources and dummy data used for development and testing purposes. Users should verify data sources for production use and replace test data with current official statistics.
 
 ## 🤝 Contributing
 
@@ -356,16 +369,16 @@ SDGInfo → Cities → SDG1, SDG2, SDG3, SDG4, SDG6, SDG7, SDG11
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-## 👥 Authors
-
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
-
 ## 🙏 Acknowledgments
 
-- Sustainable Development Goals framework by United Nations
-- Pakistani government data sources
-- Django and React communities
-- Open source contributors
+- **Sustainable Development Goals** framework by United Nations
+- **Pakistani Government Data Sources** for official statistics and reports
+- **International Organizations** (World Bank, UNDP, UNESCO) for development indicators
+- **Research Institutions** for academic and policy research data
+- **Django and React Communities** for excellent documentation and support
+- **Open Source Contributors** for libraries and tools used in this project
+
+**Data Disclaimer**: This application contains both real data sourced from government and international organizations, as well as dummy/test data created during development. For production use, please verify data sources and replace any test data with current official statistics.
 
 ## 📞 Support
 
