@@ -74,7 +74,7 @@ SustainX is a full-stack web application designed to manage, analyze, and visual
 
 ### Prerequisites
 - **Python 3.8+** installed on your system
-- **Node.js 16+** and npm for frontend development
+- **Node.js 16+** and **npm** for frontend development
 - **MySQL Server** installed and running
 - **Git** (optional, for version control)
 
@@ -109,9 +109,8 @@ source sustainx_env/bin/activate
 # Install all required packages
 pip install -r requirements.txt
 
-# If you get mysqlclient error on Windows, use PyMySQL instead:
-pip uninstall mysqlclient
-pip install PyMySQL
+# Note: This project uses PyMySQL instead of mysqlclient for better compatibility
+# PyMySQL is already included in requirements.txt
 ```
 
 ### 4. Database Setup
@@ -140,12 +139,13 @@ DATABASES = {
 }
 ```
 
-#### 4.3 Configure PyMySQL (if using PyMySQL)
+#### 4.3 PyMySQL Configuration
 Ensure `sustainx/__init__.py` contains:
 ```python
 import pymysql
 pymysql.install_as_MySQLdb()
 ```
+*Note: This project uses PyMySQL as the MySQL adapter, which is already configured.*
 
 ### 5. Run Database Migrations
 ```bash
@@ -206,7 +206,7 @@ cd SustainX/sdg-dashboard
 
 ### 2. Install Node.js Dependencies
 ```bash
-# Install all required npm packages
+# Install all required npm packages (using npm, not yarn)
 npm install
 
 # Install additional icon library
@@ -291,6 +291,12 @@ POST http://localhost:8000/api/cities/
 
 ### Common Backend Issues
 
+**PyMySQL Configuration:**
+```bash
+# Ensure PyMySQL is properly configured in sustainx/__init__.py
+# This project uses PyMySQL instead of mysqlclient for better compatibility
+```
+
 **Database Connection Error:**
 ```bash
 # Check MySQL credentials in settings.py
@@ -298,11 +304,10 @@ POST http://localhost:8000/api/cities/
 # Verify database 'sustainx' exists
 ```
 
-**mysqlclient Installation Error:**
+**Missing Dependencies:**
 ```bash
-pip uninstall mysqlclient
-pip install PyMySQL
-# Then ensure PyMySQL configuration in __init__.py
+# Reinstall requirements
+pip install -r requirements.txt
 ```
 
 **Migration Conflicts:**
@@ -321,7 +326,7 @@ python manage.py migrate
 
 **Module Not Found:**
 ```bash
-# Reinstall dependencies
+# Reinstall dependencies using npm (not yarn)
 rm -rf node_modules package-lock.json
 npm install
 ```
