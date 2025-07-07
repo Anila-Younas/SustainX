@@ -370,9 +370,6 @@ SDGInfo → Cities → SDG1, SDG2, SDG3, SDG4, SDG6, SDG7, SDG11
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## 🙏 Acknowledgments
 
