@@ -60,14 +60,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'sustainx.wsgi.application'
 
 # Database
+from decouple import config
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sustainx',
-        'USER': 'root',  # Change to your MySQL username
-        'PASSWORD': 'Neeli26??',  # Change to your MySQL password
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT', default='3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
