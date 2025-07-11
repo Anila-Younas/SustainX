@@ -12,8 +12,10 @@ DEBUG = config('DEBUG', cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'sustainx-backend-production.up.railway.app',  # your Railway URL
+    '.railway.app',  # wildcard for any Railway deployment
+    'sustainx-backend-production.up.railway.app',
 ]
+
 
 CSRF_TRUSTED_ORIGINS = [
     'https://sustainx-backend-production.up.railway.app',
