@@ -15,7 +15,10 @@ ALLOWED_HOSTS = [
     'sustainx-backend-production.up.railway.app',  # your Railway URL
 ]
 
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+CSRF_TRUSTED_ORIGINS = [
+    'https://sustainx-backend-production.up.railway.app',
+]
+
 
 # Application definition
 INSTALLED_APPS = [
