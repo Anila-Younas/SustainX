@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, BarChart3, Users, Building, Droplets, Zap, Info, Database, Loader2, AlertCircle, RotateCcw, Heart, GraduationCap, Utensils, LogIn, LogOut, User, Filter, ChevronDown, Eye, Download } from 'lucide-react';
-
+import { Search, BarChart3, Users, Building, Droplets, Zap, Info, Database, Loader2, AlertCircle, RotateCcw, Heart, GraduationCap, Utensils, LogIn, LogOut, User, Filter, ChevronDown, Eye, Download, Plus, Edit, Trash2, Save, X, Settings } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 const SustainXDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [sdgData, setSdgData] = useState({});
@@ -11,16 +11,26 @@ const SustainXDashboard = () => {
   const [user, setUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [showLogin, setShowLogin] = useState(false);
+  const [cities, setCities] = useState([]);
+  const [sdgIndicators, setSdgIndicators] = useState([]);
   const [filters, setFilters] = useState({
     city: '',
     year: '',
     page: 1,
     page_size: 20
   });
-  const [cities] = useState([
-    'Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad', 
-    'Multan', 'Peshawar', 'Quetta', 'Sialkot', 'Gujranwala'
-  ]);
+  
+  // Admin state
+  const [showCityForm, setShowCityForm] = useState(false);
+  const [showDataForm, setShowDataForm] = useState(false);
+  const [editingCity, setEditingCity] = useState(null);
+  const [cityForm, setCityForm] = useState({ name: '', province: '', urbanization_level: '' });
+  const [dataForm, setDataForm] = useState({
+  sdg_goal: '',
+  city: '',
+  year: ''
+});
+
   const [years] = useState(['2020', '2021', '2022', '2023', '2024']);
 
   // Base API URL
@@ -180,9 +190,6 @@ const SustainXDashboard = () => {
       color: '#3498db',
       borderLeft: '4px solid #3498db'
     },
-    navItemHover: {
-      backgroundColor: '#f8f9fa'
-    },
     iconContainer: {
       width: '32px',
       height: '32px',
@@ -297,8 +304,10 @@ const SustainXDashboard = () => {
       backgroundColor: 'white',
       borderRadius: '12px',
       padding: '24px',
-      width: '400px',
-      maxWidth: '90vw'
+      width: '500px',
+      maxWidth: '90vw',
+      maxHeight: '80vh',
+      overflow: 'auto'
     },
     modalTitle: {
       fontSize: '20px',
@@ -419,18 +428,18 @@ const SustainXDashboard = () => {
     }
   };
 
-  // Fetch all SDGs overview
+  // API Functions
   const fetchSDGsOverview = async () => {
     setLoading(prev => ({ ...prev, overview: true }));
     setError(prev => ({ ...prev, overview: null }));
 
     try {
-      const response = await fetch(${BASE_URL}/api/sdgs/, {
+      const response = await fetch(`${BASE_URL}/api/sdgs/`, {
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error(HTTP error! status: ${response.status});
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const result = await response.json();
@@ -446,7 +455,159 @@ const SustainXDashboard = () => {
     }
   };
 
-  // Fetch specific SDG data with filters
+ const fetchCities = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/cities/`, { 
+      credentials: 'include' 
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        setCities(result.cities || []);
+        return;
+      }
+    }
+    
+    // API not working yet, use actual cities from your database
+    // Go to your admin panel and copy the exact cities you have
+    console.log('Using database cities from admin panel');
+    setCities([
+      { city_id: 1, city_name: 'Dera Ismail KHAN', province: 'Punjab', urbanization_level: 'Urban' },
+      { city_id: 2, city_name: 'Dera Ghazi Khan', province: 'Punjab', urbanization_level: 'Urban' },
+      // Add more cities here that you see in your admin panel
+      // Copy the exact names from http://localhost:8000/admin/sdg_app/city/
+    ]);
+    
+  } catch (err) {
+    console.error('Error fetching cities:', err);
+    // Use the cities from your admin panel
+    setCities([
+      { city_id: 1, city_name: 'Dera Ismail KHAN', province: 'Punjab', urbanization_level: 'Urban' },
+      { city_id: 2, city_name: 'Dera Ghazi Khan', province: 'Punjab', urbanization_level: 'Urban' }
+    ]);
+  }
+};
+
+  const fetchSDGIndicators = async (sdgNumber) => {
+  // Define actual database fields for each SDG based on your admin.py
+  const sdgFields = {
+    1: ['income_level', 'access_to_education', 'social_protection'],
+    2: ['malnutrition_rate', 'food_insecurity'], 
+    3: ['access_to_healthcare', 'maternal_mortality', 'vaccination_coverage'],
+    4: ['literacy_rate', 'school_enrollment', 'ict_access'],
+    6: ['access_to_clean_water', 'sanitation_coverage'],
+    7: ['electricity_access', 'clean_fuel_use', 'renewable_energy_share'],
+    11: ['air_quality_index', 'transport_access', 'infrastructure_score']
+  };
+  
+  setSdgIndicators(sdgFields[sdgNumber] || []);
+};
+
+  const addCity = async (cityData) => {
+  try {
+    console.log('Sending city data:', cityData); // Debug log
+    const response = await fetch(`${BASE_URL}/api/cities/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name: cityData.name,
+        province: cityData.province || '',
+        urbanization_level: cityData.urbanization_level || 'Urban'
+      })
+    });
+    
+    console.log('Response status:', response.status); // Debug log
+    const result = await response.json();
+    console.log('Response data:', result); // Debug log
+    
+    if (result.success) {
+      await fetchCities(); // Wait for cities to refresh
+      setShowCityForm(false);
+      setCityForm({ name: '', province: '', urbanization_level: '' });
+      alert('City added successfully!');
+    } else {
+      alert('Error adding city: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error adding city:', err);
+    alert('Error adding city: ' + err.message);
+  }
+};
+
+  const deleteCity = async (cityId) => {
+    try {
+      await fetch(`${BASE_URL}/api/cities/${cityId}/`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      fetchCities();
+    } catch (err) {
+      console.error('Error deleting city:', err);
+    }
+  };
+
+  const addData = async (data) => {
+  try {
+    console.log('Adding complete SDG data:', data);
+    
+    // Prepare data for API with all indicators
+    const apiData = {
+      city_id: parseInt(data.city),
+      year: parseInt(data.year)
+    };
+    
+    // Add all indicator values
+    let indicatorCount = 0;
+    sdgIndicators.forEach(indicator => {
+      if (data[indicator] && data[indicator] !== '') {
+        apiData[indicator] = parseFloat(data[indicator]);
+        indicatorCount++;
+      }
+    });
+    
+    console.log(`Submitting ${indicatorCount} indicators:`, apiData);
+    
+    // Validate all indicators are provided
+    if (indicatorCount !== sdgIndicators.length) {
+      alert(`Please fill all ${sdgIndicators.length} indicators. Currently filled: ${indicatorCount}`);
+      return;
+    }
+    
+    const response = await fetch(`${BASE_URL}/api/data/sdg${data.sdg_goal}/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(apiData)
+    });
+    
+    const result = await response.json();
+    console.log('Response result:', result);
+    
+    if (result.success) {
+      setShowDataForm(false);
+      // Reset form completely
+      const resetForm = { sdg_goal: '', city: '', year: '' };
+      sdgIndicators.forEach(indicator => {
+        resetForm[indicator] = '';
+      });
+      setDataForm(resetForm);
+      
+      alert(`✅ Complete SDG ${data.sdg_goal} data for ${data.year} added successfully!`);
+      
+      // Refresh current SDG data if viewing
+      if (activeTab !== 'overview' && !isNaN(activeTab)) {
+        fetchSDGData(activeTab);
+      }
+    } else {
+      alert('❌ Error adding data: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Error adding data:', err);
+    alert('❌ Error adding data: ' + err.message);
+  }
+};
   const fetchSDGData = async (sdgNumber) => {
     setLoading(prev => ({ ...prev, [sdgNumber]: true }));
     setError(prev => ({ ...prev, [sdgNumber]: null }));
@@ -458,13 +619,13 @@ const SustainXDashboard = () => {
       if (filters.page) params.append('page', filters.page);
       if (filters.page_size) params.append('page_size', filters.page_size);
 
-      const url = ${BASE_URL}/api/data/sdg/${sdgNumber}/?${params};
+      const url = `${BASE_URL}/api/data/sdg/${sdgNumber}/?${params}`;
       const response = await fetch(url, {
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error(HTTP error! status: ${response.status});
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const result = await response.json();
@@ -476,13 +637,12 @@ const SustainXDashboard = () => {
     }
   };
 
-  // Login function
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(prev => ({ ...prev, login: true }));
 
     try {
-      const response = await fetch(${BASE_URL}/api/auth/login/, {
+      const response = await fetch(`${BASE_URL}/api/auth/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -507,10 +667,9 @@ const SustainXDashboard = () => {
     }
   };
 
-  // Logout function
   const handleLogout = async () => {
     try {
-      await fetch(${BASE_URL}/api/auth/logout/, {
+      await fetch(`${BASE_URL}/api/auth/logout/`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -521,10 +680,9 @@ const SustainXDashboard = () => {
     }
   };
 
-  // Check authentication on load
   const checkAuth = async () => {
     try {
-      const response = await fetch(${BASE_URL}/api/auth/check/, {
+      const response = await fetch(`${BASE_URL}/api/auth/check/`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -536,27 +694,26 @@ const SustainXDashboard = () => {
     }
   };
 
-  // Load initial data
+  // Effects
   useEffect(() => {
     checkAuth();
     fetchSDGsOverview();
+    fetchCities();
   }, []);
 
-  // Load SDG data when tab changes or filters change
   useEffect(() => {
-    if (activeTab !== 'overview' && !isNaN(activeTab)) {
+    if (activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && !isNaN(activeTab)) {
       fetchSDGData(activeTab);
     }
   }, [activeTab, filters]);
 
-  // Apply filters
+  // Utility functions
   const applyFilters = () => {
-    if (activeTab !== 'overview' && !isNaN(activeTab)) {
+    if (activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && !isNaN(activeTab)) {
       fetchSDGData(activeTab);
     }
   };
 
-  // Reset filters
   const resetFilters = () => {
     setFilters({
       city: '',
@@ -566,7 +723,6 @@ const SustainXDashboard = () => {
     });
   };
 
-  // Filter data based on search term
   const filterData = (items) => {
     if (!searchTerm || !items) return items;
     
@@ -578,7 +734,326 @@ const SustainXDashboard = () => {
     return items;
   };
 
-  // Render data table
+  // Render functions
+  const renderCitiesManagement = () => {
+  // Fetch cities if not already loaded
+  if (cities.length === 0) {
+    fetchCities();
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <h3>Cities Management</h3>
+        <button onClick={() => setShowCityForm(true)} style={{...styles.button, ...styles.primaryButton}}>
+          <Plus size={16} /> Add City
+        </button>
+      </div>
+      
+      <div style={{ overflowX: 'auto' }}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.tableHeaderCell}>City Name</th>
+              <th style={styles.tableHeaderCell}>Province</th>
+              <th style={styles.tableHeaderCell}>Urbanization Level</th>
+              <th style={styles.tableHeaderCell}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cities.length > 0 ? (
+              cities.map(city => (
+                <tr key={city.city_id}>
+                  <td style={styles.tableCell}>{city.city_name}</td>
+                  <td style={styles.tableCell}>{city.province || '-'}</td>
+                  <td style={styles.tableCell}>{city.urbanization_level || '-'}</td>
+                  <td style={styles.tableCell}>
+                    <button onClick={() => deleteCity(city.city_id)} style={{...styles.button, color: '#e74c3c'}}>
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" style={{...styles.tableCell, textAlign: 'center', padding: '40px'}}>
+                  No cities found. Add some cities to get started.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {showCityForm && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <h3>Add New City</h3>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>City Name</label>
+              <input
+                type="text"
+                value={cityForm.name}
+                onChange={(e) => setCityForm(prev => ({...prev, name: e.target.value}))}
+                style={styles.input}
+                required
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Province</label>
+              <select
+                value={cityForm.province}
+                onChange={(e) => setCityForm(prev => ({...prev, province: e.target.value}))}
+                style={styles.select}
+                required
+              >
+                <option value="">Select Province</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Sindh">Sindh</option>
+                <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</option>
+                <option value="Balochistan">Balochistan</option>
+                <option value="Federal">Federal</option>
+              </select>
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Urbanization Level</label>
+              <select
+                value={cityForm.urbanization_level}
+                onChange={(e) => setCityForm(prev => ({...prev, urbanization_level: e.target.value}))}
+                style={styles.select}
+                required
+              >
+                <option value="">Select Level</option>
+                <option value="Urban">Urban</option>
+                <option value="Semi-Urban">Semi-Urban</option>
+                <option value="Rural">Rural</option>
+              </select>
+            </div>
+            <div style={styles.buttonGroup}>
+              <button 
+                onClick={() => addCity(cityForm)} 
+                style={{...styles.button, ...styles.primaryButton}}
+                disabled={!cityForm.name || !cityForm.province || !cityForm.urbanization_level}
+              >
+                <Save size={16} /> Save
+              </button>
+              <button onClick={() => setShowCityForm(false)} style={{...styles.button, ...styles.secondaryButton}}>
+                <X size={16} /> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+  const renderDataEntry = () => (
+  <div>
+    <h3>Add Complete SDG Data</h3>
+    <div style={styles.formGroup}>
+      <label style={styles.label}>SDG Goal</label>
+      <select
+        value={dataForm.sdg_goal}
+        onChange={(e) => {
+          // Reset all form data when SDG changes
+          const newForm = { sdg_goal: e.target.value, city: '', year: '' };
+          // Clear all indicator values
+          sdgIndicators.forEach(indicator => {
+            newForm[indicator] = '';
+          });
+          setDataForm(newForm);
+          
+          if (e.target.value) {
+            fetchSDGIndicators(e.target.value);
+          }
+        }}
+        style={styles.select}
+      >
+        <option value="">Select SDG</option>
+        {Object.entries(sdgConfig).map(([num, config]) => (
+          <option key={num} value={num}>SDG {num}: {config.name}</option>
+        ))}
+      </select>
+    </div>
+    
+    {dataForm.sdg_goal && (
+      <>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>City</label>
+          <select
+            value={dataForm.city}
+            onChange={(e) => setDataForm(prev => ({...prev, city: e.target.value}))}
+            style={styles.select}
+          >
+            <option value="">Select City</option>
+            {cities.map(city => (
+              <option key={city.city_id} value={city.city_id}>
+                {city.city_name}, {city.province}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Year</label>
+          <select
+            value={dataForm.year}
+            onChange={(e) => setDataForm(prev => ({...prev, year: e.target.value}))}
+            style={styles.select}
+          >
+            <option value="">Select Year</option>
+            {years.map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Show all indicators section */}
+        {dataForm.city && dataForm.year && (
+          <div style={{
+            marginTop: '25px', 
+            padding: '20px', 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '12px',
+            border: '1px solid #e1e8ed'
+          }}>
+            <h4 style={{
+              margin: '0 0 20px 0', 
+              color: '#2c3e50',
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              📊 Complete SDG {dataForm.sdg_goal} Data Entry
+            </h4>
+            <p style={{
+              margin: '0 0 20px 0',
+              color: '#7f8c8d',
+              fontSize: '14px'
+            }}>
+              Enter values for all indicators for <strong>{cities.find(c => c.city_id == dataForm.city)?.city_name}</strong> in <strong>{dataForm.year}</strong>
+            </p>
+            
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '16px'
+            }}>
+              {sdgIndicators.map((indicator, index) => (
+                <div key={index} style={{
+                  ...styles.formGroup,
+                  backgroundColor: 'white',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd'
+                }}>
+                  <label style={{
+                    ...styles.label,
+                    fontWeight: '500',
+                    marginBottom: '8px'
+                  }}>
+                    {indicator.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()}
+                    <span style={{color: '#e74c3c'}}> *</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={dataForm[indicator] || ''}
+                    onChange={(e) => setDataForm(prev => ({...prev, [indicator]: e.target.value}))}
+                    style={{
+                      ...styles.input,
+                      borderColor: dataForm[indicator] ? '#27ae60' : '#ddd'
+                    }}
+                    placeholder="Enter value"
+                    required
+                  />
+                  {dataForm[indicator] && (
+                    <span style={{
+                      fontSize: '12px',
+                      color: '#27ae60',
+                      marginTop: '4px',
+                      display: 'block'
+                    }}>
+                      ✓ Value entered
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Progress indicator */}
+            <div style={{marginTop: '20px', marginBottom: '20px'}}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px'
+              }}>
+                <span style={{fontSize: '14px', color: '#2c3e50'}}>
+                  Progress: {sdgIndicators.filter(indicator => dataForm[indicator]).length} of {sdgIndicators.length} indicators filled
+                </span>
+                <span style={{fontSize: '14px', color: '#7f8c8d'}}>
+                  {Math.round((sdgIndicators.filter(indicator => dataForm[indicator]).length / sdgIndicators.length) * 100)}%
+                </span>
+              </div>
+              <div style={{
+                width: '100%',
+                height: '8px',
+                backgroundColor: '#e1e8ed',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${(sdgIndicators.filter(indicator => dataForm[indicator]).length / sdgIndicators.length) * 100}%`,
+                  height: '100%',
+                  backgroundColor: '#3498db',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => addData(dataForm)} 
+              style={{
+                ...styles.button, 
+                ...styles.primaryButton,
+                width: '100%',
+                padding: '12px 24px',
+                fontSize: '16px',
+                fontWeight: '600',
+                opacity: (!dataForm.sdg_goal || !dataForm.city || !dataForm.year || 
+                         sdgIndicators.some(indicator => !dataForm[indicator])) ? 0.5 : 1,
+                cursor: (!dataForm.sdg_goal || !dataForm.city || !dataForm.year || 
+                        sdgIndicators.some(indicator => !dataForm[indicator])) ? 'not-allowed' : 'pointer'
+              }}
+              disabled={!dataForm.sdg_goal || !dataForm.city || !dataForm.year || 
+                        sdgIndicators.some(indicator => !dataForm[indicator])}
+            >
+              <Save size={20} /> 
+              Add Complete SDG {dataForm.sdg_goal} Data for {dataForm.year}
+            </button>
+            
+            {sdgIndicators.some(indicator => !dataForm[indicator]) && (
+              <p style={{
+                color: '#e74c3c', 
+                fontSize: '14px', 
+                marginTop: '12px',
+                textAlign: 'center',
+                backgroundColor: '#fdf2f2',
+                padding: '12px',
+                borderRadius: '6px',
+                border: '1px solid #fecaca'
+              }}>
+                ⚠️ Please fill all {sdgIndicators.length} indicators before submitting
+              </p>
+            )}
+          </div>
+        )}
+      </>
+    )}
+  </div>
+);
+
   const renderDataTable = (data) => {
     if (!data) return null;
     
@@ -615,7 +1090,6 @@ const SustainXDashboard = () => {
 
       return (
         <div>
-          {/* Data Summary */}
           {data.total && (
             <div style={styles.summary}>
               <div style={styles.summaryText}>
@@ -627,7 +1101,6 @@ const SustainXDashboard = () => {
             </div>
           )}
 
-          {/* Data Table */}
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
               <thead style={styles.tableHeader}>
@@ -661,7 +1134,6 @@ const SustainXDashboard = () => {
             </table>
           </div>
 
-          {/* Pagination */}
           {data.total_pages > 1 && (
             <div style={styles.pagination}>
               <button
@@ -706,81 +1178,532 @@ const SustainXDashboard = () => {
     );
   };
 
-  // Render SDG overview cards
   const renderOverview = () => {
-    if (loading.overview) {
-      return (
-        <div style={styles.loadingContainer}>
-          <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#3498db' }} />
-          <span style={{ marginLeft: '8px' }}>Loading SDGs...</span>
-        </div>
-      );
-    }
-
-    if (error.overview) {
-      return (
-        <div style={styles.errorContainer}>
-          <AlertCircle size={48} style={styles.errorIcon} />
-          <p style={styles.errorText}>Error: {error.overview}</p>
-          <button 
-            onClick={fetchSDGsOverview}
-            style={{...styles.button, ...styles.dangerButton}}
-          >
-            Try Again
-          </button>
-        </div>
-      );
-    }
-
+  if (loading.overview) {
     return (
-      <div style={styles.overviewGrid}>
-        {sdgList.map((sdg) => {
-          const config = sdgConfig[sdg.goal_number];
-          if (!config) return null;
-          
-          const Icon = config.icon;
-          
-          return (
-            <div 
-              key={sdg.id}
-              style={{
-                ...styles.sdgCard,
-                ':hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
-              }}
-              onClick={() => setActiveTab(sdg.goal_number.toString())}
-              onMouseEnter={(e) => e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'}
-              onMouseLeave={(e) => e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
-            >
-              <div style={styles.sdgCardHeader}>
-                <div style={{...styles.sdgIconContainer, backgroundColor: config.color}}>
-                  <Icon size={24} color="white" />
-                </div>
-                <div>
-                  <h3 style={styles.sdgTitle}>SDG {sdg.goal_number}</h3>
-                  <p style={styles.sdgSubtitle}>{config.name}</p>
-                </div>
+      <div style={styles.loadingContainer}>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#3498db' }} />
+        <span style={{ marginLeft: '8px' }}>Loading SDGs...</span>
+      </div>
+    );
+  }
+
+  if (error.overview) {
+    return (
+      <div style={styles.errorContainer}>
+        <AlertCircle size={48} style={styles.errorIcon} />
+        <p style={styles.errorText}>Error: {error.overview}</p>
+        <button 
+          onClick={fetchSDGsOverview}
+          style={{...styles.button, ...styles.dangerButton}}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.overviewGrid}>
+      {sdgList.map((sdg) => {
+        const config = sdgConfig[sdg.goal_number];
+        if (!config) return null;
+        
+        const Icon = config.icon;
+        
+        return (
+          <div 
+            key={sdg.id}
+            style={{
+              ...styles.sdgCard,
+              ':hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
+            }}
+            onClick={() => setActiveTab(sdg.goal_number.toString())}
+            onMouseEnter={(e) => e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'}
+            onMouseLeave={(e) => e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
+          >
+            <div style={styles.sdgCardHeader}>
+              <div style={{...styles.sdgIconContainer, backgroundColor: config.color}}>
+                <Icon size={24} color="white" />
               </div>
-              <p style={styles.sdgDescription}>{sdg.description}</p>
-              <div style={styles.sdgFooter}>
-                <span style={styles.dataPoints}>
-                  {sdg.data_points} data points
-                </span>
-                <div style={styles.viewButton}>
-                  <Eye size={16} />
-                  View Data
-                </div>
+              <div>
+                <h3 style={styles.sdgTitle}>SDG {sdg.goal_number}</h3>
+                <p style={styles.sdgSubtitle}>{config.name}</p>
               </div>
             </div>
-          );
-        })}
+            <p style={styles.sdgDescription}>{sdg.description}</p>
+            <div style={styles.sdgFooter}>
+              <span style={styles.dataPoints}>
+                {sdg.data_points} data points
+              </span>
+              <div style={styles.viewButton}>
+                <BarChart3 size={16} />
+                View Charts & Data
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+  const renderSDGCharts = (sdgNumber, data) => {
+  if (!data || !data.data || data.data.length === 0) {
+    return (
+      <div style={styles.emptyState}>
+        <BarChart3 size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
+        <p>No data available for charts</p>
+        <p style={{ fontSize: '14px', color: '#7f8c8d' }}>Add some data to see individual indicator charts</p>
+      </div>
+    );
+  }
+
+  const chartData = data.data;
+  const config = sdgConfig[sdgNumber];
+  
+  // Updated indicators mapping with exact field names from your admin.py
+  const indicators = {
+    1: ['income_level', 'access_to_education', 'social_protection'],
+    2: ['malnutrition_rate', 'food_insecurity'],
+    3: ['access_to_healthcare', 'maternal_mortality', 'vaccination_coverage'],
+    4: ['literacy_rate', 'school_enrollment', 'ict_access'],
+    6: ['access_to_clean_water', 'sanitation_coverage'],
+    7: ['electricity_access', 'clean_fuel_use', 'renewable_energy_share'],
+    11: ['air_quality_index', 'transport_access', 'infrastructure_score']
+  };
+
+  const sdgIndicators = indicators[sdgNumber] || [];
+  const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22'];
+
+  // Debug: Log data to console
+  console.log('=== SDG', sdgNumber, 'Debug Info ===');
+  console.log('Total records:', chartData.length);
+  console.log('Expected indicators:', sdgIndicators);
+  if (chartData.length > 0) {
+    console.log('Sample data fields:', Object.keys(chartData[0]));
+    console.log('Sample record:', chartData[0]);
+  }
+
+  // Process data for each indicator across all years
+  const processIndicatorData = () => {
+    const indicatorYearData = {};
+    const allYears = new Set();
+    
+    // Initialize structure
+    sdgIndicators.forEach(indicator => {
+      indicatorYearData[indicator] = {};
+    });
+    
+    // Collect all data points
+    chartData.forEach(item => {
+      const year = item.year;
+      allYears.add(year);
+      
+      sdgIndicators.forEach(indicator => {
+        // Check multiple possible field name variations
+        let fieldValue = null;
+        
+        // Try exact match first
+        if (item[indicator] !== null && item[indicator] !== undefined) {
+          fieldValue = item[indicator];
+        }
+        // Try capitalized version
+        else if (item[indicator.charAt(0).toUpperCase() + indicator.slice(1)] !== null && 
+                 item[indicator.charAt(0).toUpperCase() + indicator.slice(1)] !== undefined) {
+          fieldValue = item[indicator.charAt(0).toUpperCase() + indicator.slice(1)];
+        }
+        // Try all caps version
+        else if (item[indicator.toUpperCase()] !== null && item[indicator.toUpperCase()] !== undefined) {
+          fieldValue = item[indicator.toUpperCase()];
+        }
+        // Try snake_case variations
+        else if (item[indicator.replace(/_/g, '')] !== null && item[indicator.replace(/_/g, '')] !== undefined) {
+          fieldValue = item[indicator.replace(/_/g, '')];
+        }
+        
+        if (fieldValue !== null) {
+          if (!indicatorYearData[indicator][year]) {
+            indicatorYearData[indicator][year] = [];
+          }
+          indicatorYearData[indicator][year].push(parseFloat(fieldValue));
+          console.log(`Found data for ${indicator} in year ${year}:`, fieldValue);
+        }
+      });
+    });
+
+    // Calculate averages for each indicator per year
+    const processedData = {};
+    sdgIndicators.forEach(indicator => {
+      processedData[indicator] = {};
+      Array.from(allYears).forEach(year => {
+        if (indicatorYearData[indicator][year]) {
+          const values = indicatorYearData[indicator][year];
+          processedData[indicator][year] = values.reduce((a, b) => a + b, 0) / values.length;
+        }
+      });
+    });
+
+    return {
+      indicatorData: processedData,
+      years: Array.from(allYears).sort()
+    };
+  };
+
+  const { indicatorData, years } = processIndicatorData();
+
+  // Create individual chart for each indicator
+  const renderIndicatorChart = (indicator, index) => {
+    const indicatorValues = indicatorData[indicator];
+    const yearsWithData = years.filter(year => indicatorValues[year] !== undefined);
+    const maxValue = yearsWithData.length > 0 ? Math.max(...yearsWithData.map(year => indicatorValues[year]), 1) : 1;
+    const color = colors[index % colors.length];
+    
+    return (
+      <div key={indicator} style={{
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        padding: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid #e1e8ed',
+        marginBottom: '24px'
+      }}>
+        {/* Chart Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: '20px',
+          paddingBottom: '12px',
+          borderBottom: '1px solid #e1e8ed'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '6px',
+            backgroundColor: color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: '12px'
+          }}>
+            <BarChart3 size={16} color="white" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h4 style={{
+              margin: 0,
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#2c3e50'
+            }}>
+              {indicator.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()}
+            </h4>
+            <p style={{
+              margin: '2px 0 0 0',
+              fontSize: '12px',
+              color: '#7f8c8d'
+            }}>
+              {yearsWithData.length} years of data • Max: {maxValue.toFixed(2)}
+            </p>
+          </div>
+          <div style={{
+            backgroundColor: `${color}15`,
+            color: color,
+            padding: '4px 8px',
+            borderRadius: '12px',
+            fontSize: '11px',
+            fontWeight: '500'
+          }}>
+            Chart #{index + 1}
+          </div>
+        </div>
+
+        {/* Bar Chart for this indicator */}
+        <div style={{
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          padding: '20px'
+        }}>
+          {yearsWithData.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px',
+              color: '#7f8c8d'
+            }}>
+              <div style={{
+                fontSize: '14px',
+                marginBottom: '8px'
+              }}>
+                No data available for this indicator
+              </div>
+              <div style={{ fontSize: '12px' }}>
+                Expected field name: <code style={{backgroundColor: '#e1e8ed', padding: '2px 4px', borderRadius: '3px'}}>{indicator}</code>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Chart Container */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'end',
+                justifyContent: 'center',
+                height: '200px',
+                backgroundColor: 'white',
+                borderRadius: '6px',
+                padding: '16px',
+                border: '1px solid #e1e8ed',
+                marginBottom: '16px',
+                gap: '12px'
+              }}>
+                {yearsWithData.map(year => {
+                  const value = indicatorValues[year];
+                  const barHeight = (value / maxValue) * 150;
+                  
+                  return (
+                    <div key={year} style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      flex: 1,
+                      maxWidth: '80px'
+                    }}>
+                      {/* Value Label */}
+                      <div style={{
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: color,
+                        marginBottom: '8px',
+                        backgroundColor: `${color}15`,
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        minWidth: '40px',
+                        textAlign: 'center'
+                      }}>
+                        {value.toFixed(1)}
+                      </div>
+                      
+                      {/* Bar */}
+                      <div style={{
+                        width: '40px',
+                        height: `${barHeight}px`,
+                        backgroundColor: color,
+                        borderRadius: '4px 4px 0 0',
+                        marginBottom: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.opacity = '0.8';
+                        e.target.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.opacity = '1';
+                        e.target.style.transform = 'scale(1)';
+                      }}
+                      title={`${year}: ${value.toFixed(2)}`}
+                      />
+                      
+                      {/* Year Label */}
+                      <div style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#2c3e50',
+                        textAlign: 'center'
+                      }}>
+                        {year}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Chart Statistics */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '12px',
+                fontSize: '11px',
+                color: '#7f8c8d'
+              }}>
+                <div style={{
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontWeight: 'bold', color: color }}>
+                    {Math.min(...yearsWithData.map(year => indicatorValues[year])).toFixed(1)}
+                  </div>
+                  <div>Min Value</div>
+                </div>
+                <div style={{
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontWeight: 'bold', color: color }}>
+                    {maxValue.toFixed(1)}
+                  </div>
+                  <div>Max Value</div>
+                </div>
+                <div style={{
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontWeight: 'bold', color: color }}>
+                    {(yearsWithData.reduce((sum, year) => sum + indicatorValues[year], 0) / yearsWithData.length).toFixed(1)}
+                  </div>
+                  <div>Average</div>
+                </div>
+                <div style={{
+                  backgroundColor: 'white',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontWeight: 'bold', color: color }}>
+                    {yearsWithData.length}
+                  </div>
+                  <div>Data Points</div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   };
 
-  // Render content based on active tab
+  return (
+    <div style={{ marginTop: '24px' }}>
+      {/* Main Header */}
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid #e1e8ed',
+        marginBottom: '24px'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '8px',
+              backgroundColor: config.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '16px'
+            }}>
+              <BarChart3 size={24} color="white" />
+            </div>
+            <div>
+              <h3 style={{
+                margin: 0,
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#2c3e50'
+              }}>
+                SDG {sdgNumber} Individual Indicator Charts
+              </h3>
+              <p style={{
+                margin: '4px 0 0 0',
+                fontSize: '14px',
+                color: '#7f8c8d'
+              }}>
+                {config.name} - {sdgIndicators.length} separate charts for detailed analysis
+              </p>
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: '#e8f5e8',
+            color: '#27ae60',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '500'
+          }}>
+            🔄 Auto-Updates When Data Added
+          </div>
+        </div>
+
+        {/* Overview Stats */}
+        <div style={{
+          marginTop: '20px',
+          padding: '16px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '12px',
+          fontSize: '14px'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: config.color }}>
+              {sdgIndicators.length}
+            </div>
+            <div style={{ color: '#7f8c8d', fontSize: '12px' }}>
+              Individual Charts
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: config.color }}>
+              {years.length}
+            </div>
+            <div style={{ color: '#7f8c8d', fontSize: '12px' }}>
+              Years Covered
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: config.color }}>
+              {chartData.length}
+            </div>
+            <div style={{ color: '#7f8c8d', fontSize: '12px' }}>
+              Total Records
+            </div>
+          </div>
+        </div>
+
+        {/* Debug Info */}
+        <div style={{
+          marginTop: '16px',
+          padding: '12px',
+          backgroundColor: '#fff3cd',
+          borderRadius: '6px',
+          fontSize: '12px',
+          color: '#856404'
+        }}>
+          <strong>Debug Info:</strong> Check browser console (F12) for field name details.
+          Expected indicators: {sdgIndicators.join(', ')}
+        </div>
+      </div>
+
+      {/* Individual Charts for Each Indicator */}
+      {sdgIndicators.map((indicator, index) => renderIndicatorChart(indicator, index))}
+    </div>
+  );
+};
   const renderContent = () => {
     if (activeTab === 'overview') {
       return renderOverview();
+    }
+
+    if (activeTab === 'cities') {
+      return renderCitiesManagement();
+    }
+
+    if (activeTab === 'add-data') {
+      return renderDataEntry();
     }
 
     const sdgNumber = parseInt(activeTab);
@@ -813,20 +1736,61 @@ const SustainXDashboard = () => {
     }
 
     if (!currentData) {
-      return (
-        <div style={styles.emptyState}>
-          <p>Click "Load Data" to fetch SDG {sdgNumber} information</p>
-          <button 
-            onClick={() => fetchSDGData(sdgNumber)}
-            style={{...styles.button, ...styles.primaryButton, marginTop: '16px'}}
-          >
-            Load Data
-          </button>
-        </div>
-      );
-    }
+  return (
+    <div style={styles.emptyState}>
+      <p>Click "Load Data" to fetch SDG {sdgNumber} information</p>
+      <button 
+        onClick={() => fetchSDGData(sdgNumber)}
+        style={{...styles.button, ...styles.primaryButton, marginTop: '16px'}}
+      >
+        Load Data
+      </button>
+    </div>
+  );
+}
 
-    return renderDataTable(currentData);
+return (
+  <div>
+    {/* Charts Section - Available to ALL users */}
+    {renderSDGCharts(sdgNumber, currentData)}
+    
+    {/* Data Table Section */}
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '12px',
+      padding: '24px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      border: '1px solid #e1e8ed',
+      marginTop: '24px'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '16px'
+      }}>
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: '600',
+          color: '#2c3e50',
+          margin: 0
+        }}>
+          📊 Raw Data Table
+        </h3>
+        <div style={{
+          fontSize: '12px',
+          color: '#7f8c8d',
+          backgroundColor: '#f8f9fa',
+          padding: '4px 8px',
+          borderRadius: '4px'
+        }}>
+          Interactive charts above • Data table below
+        </div>
+      </div>
+      {renderDataTable(currentData)}
+    </div>
+  </div>
+);
   };
 
   return (
@@ -843,7 +1807,6 @@ const SustainXDashboard = () => {
           </div>
           
           <div style={styles.headerActions}>
-            {/* Search */}
             <div style={styles.searchContainer}>
               <Search size={16} style={styles.searchIcon} />
               <input
@@ -851,16 +1814,12 @@ const SustainXDashboard = () => {
                 placeholder="Search data..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  ...styles.searchInput,
-                  ':focus': { borderColor: '#3498db' }
-                }}
+                style={styles.searchInput}
                 onFocus={(e) => e.target.style.borderColor = '#3498db'}
                 onBlur={(e) => e.target.style.borderColor = '#ddd'}
               />
             </div>
 
-            {/* User Menu */}
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
@@ -904,10 +1863,7 @@ const SustainXDashboard = () => {
                   type="text"
                   value={loginForm.username}
                   onChange={(e) => setLoginForm(prev => ({ ...prev, username: e.target.value }))}
-                  style={{
-                    ...styles.input,
-                    ':focus': { borderColor: '#3498db' }
-                  }}
+                  style={styles.input}
                   onFocus={(e) => e.target.style.borderColor = '#3498db'}
                   onBlur={(e) => e.target.style.borderColor = '#ddd'}
                   required
@@ -919,10 +1875,7 @@ const SustainXDashboard = () => {
                   type="password"
                   value={loginForm.password}
                   onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                  style={{
-                    ...styles.input,
-                    ':focus': { borderColor: '#3498db' }
-                  }}
+                  style={styles.input}
                   onFocus={(e) => e.target.style.borderColor = '#3498db'}
                   onBlur={(e) => e.target.style.borderColor = '#ddd'}
                   required
@@ -962,10 +1915,74 @@ const SustainXDashboard = () => {
         </div>
       )}
 
+      {/* City Form Modal */}
+      {showCityForm && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <h3>Add New City</h3>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>City Name</label>
+              <input
+                type="text"
+                value={cityForm.name}
+                onChange={(e) => setCityForm(prev => ({...prev, name: e.target.value}))}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Population</label>
+              <input
+                type="number"
+                value={cityForm.population}
+                onChange={(e) => setCityForm(prev => ({...prev, population: e.target.value}))}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Area (km²)</label>
+              <input
+                type="number"
+                value={cityForm.area}
+                onChange={(e) => setCityForm(prev => ({...prev, area: e.target.value}))}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.buttonGroup}>
+              <button 
+  onClick={() => addCity(cityForm)} 
+  style={{...styles.button, ...styles.primaryButton}}
+  disabled={!cityForm.name || !cityForm.province || !cityForm.urbanization_level}
+>
+  <Save size={16} /> Save
+</button>
+              <button onClick={() => setShowCityForm(false)} style={{...styles.button, ...styles.secondaryButton}}>
+                <X size={16} /> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Form Modal */}
+      {showDataForm && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            {renderDataEntry()}
+            <div style={styles.buttonGroup}>
+              <button
+                onClick={() => setShowDataForm(false)}
+                style={{...styles.button, ...styles.secondaryButton}}
+              >
+                <X size={16} /> Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={styles.mainContent}>
         {/* Sidebar */}
         <aside style={styles.sidebar}>
-          {/* Navigation */}
           <nav style={styles.card}>
             <h2 style={styles.cardTitle}>Navigation</h2>
             <ul style={styles.navList}>
@@ -993,6 +2010,60 @@ const SustainXDashboard = () => {
                   <span>Overview</span>
                 </button>
               </li>
+              
+              {user && (
+                <>
+                  <li>
+                    <button
+                      onClick={() => setActiveTab('cities')}
+                      style={{
+                        ...styles.navItem,
+                        ...(activeTab === 'cities' ? styles.navItemActive : {})
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeTab !== 'cities') {
+                          e.target.style.backgroundColor = '#f8f9fa';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== 'cities') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
+                      <div style={{...styles.iconContainer, backgroundColor: '#9b59b6'}}>
+                        <Building size={16} color="white" />
+                      </div>
+                      <span>Manage Cities</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => setActiveTab('add-data')}
+                      style={{
+                        ...styles.navItem,
+                        ...(activeTab === 'add-data' ? styles.navItemActive : {})
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeTab !== 'add-data') {
+                          e.target.style.backgroundColor = '#f8f9fa';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== 'add-data') {
+                          e.target.style.backgroundColor = 'transparent';
+                        }
+                      }}
+                    >
+                      <div style={{...styles.iconContainer, backgroundColor: '#16a085'}}>
+                        <Plus size={16} color="white" />
+                      </div>
+                      <span>Add Data</span>
+                    </button>
+                  </li>
+                </>
+              )}
+              
               {Object.entries(sdgConfig).map(([number, config]) => {
                 const Icon = config.icon;
                 const isActive = activeTab === number;
@@ -1040,7 +2111,7 @@ const SustainXDashboard = () => {
           </nav>
 
           {/* Filters */}
-          {activeTab !== 'overview' && (
+          {activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && (
             <div style={styles.card}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h3 style={styles.cardTitle}>Filters</h3>
@@ -1057,7 +2128,7 @@ const SustainXDashboard = () => {
                   >
                     <option value="">All Cities</option>
                     {cities.map(city => (
-                      <option key={city} value={city}>{city}</option>
+                      <option key={city.id} value={city.name}>{city.name}</option>
                     ))}
                   </select>
                 </div>
@@ -1119,16 +2190,32 @@ const SustainXDashboard = () => {
             <div style={styles.contentHeader}>
               <div>
                 <h2 style={styles.contentTitle}>
-                  {activeTab === 'overview' ? 'SDG Overview' : SDG ${activeTab}: ${sdgConfig[activeTab]?.name}}
-                </h2>
-                {activeTab !== 'overview' && sdgConfig[activeTab] && (
+  {activeTab === 'overview' ? 'SDG Overview' : 
+   activeTab === 'cities' ? 'Cities Management' :
+   activeTab === 'add-data' ? 'Add New Data' :
+   `📊 SDG ${activeTab}: ${sdgConfig[activeTab]?.name} - Charts & Data`}
+</h2>
+                {activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && sdgConfig[activeTab] && (
                   <p style={styles.contentSubtitle}>
                     {sdgConfig[activeTab].description}
                   </p>
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {activeTab !== 'overview' && (
+                {activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && user && (
+                  <button
+                    onClick={() => {
+                      setDataForm(prev => ({...prev, sdg_goal: activeTab}));
+                      setShowDataForm(true);
+                      fetchSDGIndicators(activeTab);
+                    }}
+                    style={{...styles.button, ...styles.primaryButton}}
+                    title="Add new data for this SDG"
+                  >
+                    <Plus size={16} /> Add Data
+                  </button>
+                )}
+                {activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && (
                   <button
                     onClick={() => fetchSDGData(parseInt(activeTab))}
                     disabled={loading[activeTab]}
@@ -1164,6 +2251,7 @@ const SustainXDashboard = () => {
       </style>
     </div>
   );
+  
 };
 
 export default SustainXDashboard;
