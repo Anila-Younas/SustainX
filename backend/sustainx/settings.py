@@ -9,21 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', cast=bool)
 
-from decouple import Csv
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
-
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '.railway.app',  # wildcard for any Railway deployment
-    'sustainx-backend-production.up.railway.app',
-]
-
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://sustainx-backend-production.up.railway.app',
-]
-
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(), default=[])
 
 # Application definition
 INSTALLED_APPS = [
@@ -107,11 +94,18 @@ if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # CORS
-CORS_ALLOW_ALL_ORIGINS = DEBUG
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = [
+        "https://your-production-frontend.com",  # change if needed
+    ]
+
 CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework
