@@ -34,7 +34,8 @@ const SustainXDashboard = () => {
   const [years] = useState(['2020', '2021', '2022', '2023', '2024']);
 
   // Base API URL
-  const BASE_URL = 'http://localhost:8000';
+  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 
   // SDG configuration with proper mapping
   const sdgConfig = {

@@ -125,7 +125,7 @@ CREATE TABLE `auth_user` (
 
 LOCK TABLES `auth_user` WRITE;
 /*!40000 ALTER TABLE `auth_user` DISABLE KEYS */;
-INSERT INTO `auth_user` VALUES (1,'pbkdf2_sha256$600000$ySsjZFNmFccJRB5W0XOldc$n0gm0yDIB4ZBkZ0169yeqcxS71XoDF7G5hC5SGRzKgc=','2025-07-17 13:48:16.098757',1,'admin','','','anilayounas41@gmail.com',1,1,'2025-06-10 22:14:53.947569');
+INSERT INTO `auth_user` VALUES (1,'pbkdf2_sha256$600000$ySsjZFNmFccJRB5W0XOldc$n0gm0yDIB4ZBkZ0169yeqcxS71XoDF7G5hC5SGRzKgc=','2025-07-28 10:43:27.946819',1,'admin','','','anilayounas41@gmail.com',1,1,'2025-06-10 22:14:53.947569');
 /*!40000 ALTER TABLE `auth_user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -322,7 +322,7 @@ CREATE TABLE `django_session` (
 
 LOCK TABLES `django_session` WRITE;
 /*!40000 ALTER TABLE `django_session` DISABLE KEYS */;
-INSERT INTO `django_session` VALUES ('294oj4vhwruubi0q6no4teqzdigvsm9b','.eJxVjDEOAiEQRe9CbQggwmBp7xnIMAOyaiBZdivj3XWTLbT9773_EhHXpcZ15DlOLM5Ci8PvlpAeuW2A79huXVJvyzwluSlyp0NeO-fnZXf_DiqO-q0B2LlgPRRkpHAsgFCoGNLagPPJqeIRjVcec1InyyokQBWA2CZiEO8P8ac4dQ:1uZAfx:DO6h4L2mgCipnLL9Rcf5M0IBaiGtgpL_brLPcNg5Rsk','2025-07-09 15:56:09.970730'),('dbdgzk89zu2zptxk1bilegg87u8r6wrz','.eJxVjMsOwiAQRf-FtSHCCBSX7v0GMswFqZo26WNl_Hdt0oVu7znnvlTidWlpncuUeqizMurwu2WWRxk2gDsPt1HLOCxTn_Wm6J3O-jqiPC-7-3fQeG7fuvPijx15kz3E1FolgIoNAEkkg1MhYkK0gI05xsquBIHAO1c7Mur9AflzOKc:1ucOy8:uAzFgYJLZFZ5gzxlvR9C9nkTeeTHxFb6wjjcFAgo3Ec','2025-07-18 13:48:16.140757'),('klrx1kjzbn5dpriba8brzclm3i378yg0','.eJxVjMsOwiAQRf-FtSHCCBSX7v0GMswFqZo26WNl_Hdt0oVu7znnvlTidWlpncuUeqizMurwu2WWRxk2gDsPt1HLOCxTn_Wm6J3O-jqiPC-7-3fQeG7fuvPijx15kz3E1FolgIoNAEkkg1MhYkK0gI05xsquBIHAO1c7Mur9AflzOKc:1uaH24:eTSzq2_BzSgP6qq4zXBhew2-v_s_2v_jfuTUl7Vupao','2025-07-12 16:55:32.624451');
+INSERT INTO `django_session` VALUES ('294oj4vhwruubi0q6no4teqzdigvsm9b','.eJxVjDEOAiEQRe9CbQggwmBp7xnIMAOyaiBZdivj3XWTLbT9773_EhHXpcZ15DlOLM5Ci8PvlpAeuW2A79huXVJvyzwluSlyp0NeO-fnZXf_DiqO-q0B2LlgPRRkpHAsgFCoGNLagPPJqeIRjVcec1InyyokQBWA2CZiEO8P8ac4dQ:1uZAfx:DO6h4L2mgCipnLL9Rcf5M0IBaiGtgpL_brLPcNg5Rsk','2025-07-09 15:56:09.970730'),('dbdgzk89zu2zptxk1bilegg87u8r6wrz','.eJxVjMsOwiAQRf-FtSHCCBSX7v0GMswFqZo26WNl_Hdt0oVu7znnvlTidWlpncuUeqizMurwu2WWRxk2gDsPt1HLOCxTn_Wm6J3O-jqiPC-7-3fQeG7fuvPijx15kz3E1FolgIoNAEkkg1MhYkK0gI05xsquBIHAO1c7Mur9AflzOKc:1ucOy8:uAzFgYJLZFZ5gzxlvR9C9nkTeeTHxFb6wjjcFAgo3Ec','2025-07-18 13:48:16.140757'),('klrx1kjzbn5dpriba8brzclm3i378yg0','.eJxVjMsOwiAQRf-FtSHCCBSX7v0GMswFqZo26WNl_Hdt0oVu7znnvlTidWlpncuUeqizMurwu2WWRxk2gDsPt1HLOCxTn_Wm6J3O-jqiPC-7-3fQeG7fuvPijx15kz3E1FolgIoNAEkkg1MhYkK0gI05xsquBIHAO1c7Mur9AflzOKc:1uaH24:eTSzq2_BzSgP6qq4zXBhew2-v_s_2v_jfuTUl7Vupao','2025-07-12 16:55:32.624451'),('v19qp4ui51rc6457j7p3vklfl84djrup','.eJxVjMsOwiAQRf-FtSHCCBSX7v0GMswFqZo26WNl_Hdt0oVu7znnvlTidWlpncuUeqizMurwu2WWRxk2gDsPt1HLOCxTn_Wm6J3O-jqiPC-7-3fQeG7fuvPijx15kz3E1FolgIoNAEkkg1MhYkK0gI05xsquBIHAO1c7Mur9AflzOKc:1ugLM7:DnydW9bLYN_EyyAxbFAGQ7IMITdxLSG3O5WOyoWjOeQ','2025-07-29 10:45:19.425219');
 /*!40000 ALTER TABLE `django_session` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -608,4 +608,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-07-27 12:58:22
+-- Dump completed on 2025-08-11 16:16:30
