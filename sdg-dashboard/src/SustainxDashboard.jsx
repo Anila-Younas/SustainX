@@ -1625,17 +1625,6 @@ const SustainXDashboard = () => {
               </p>
             </div>
           </div>
-          
-          <div style={{
-            backgroundColor: '#e8f5e8',
-            color: '#27ae60',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: '500'
-          }}>
-            🔄 Auto-Updates When Data Added
-          </div>
         </div>
 
         {/* Overview Stats */}

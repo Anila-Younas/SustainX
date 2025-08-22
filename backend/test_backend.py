@@ -85,13 +85,14 @@ def main():
     print("To test admin features, create a superuser first:")
     print("python manage.py createsuperuser")
     
-    # Sample admin login test
+    # Sample admin login test - Update these credentials
     admin_data = {
-        "username": "admin",  # Change this
-        "password": "admin123"  # Change this
+        "username": "your-admin-username",  # Update with your admin username
+        "password": "your-admin-password"   # Update with your admin password
     }
     
     print(f"\nTesting admin login with sample credentials...")
+    print("⚠️ Note: Update admin_data credentials in test_backend.py before running")
     success, response = test_endpoint("POST", "/auth/login/", admin_data)
     
     if success and response:

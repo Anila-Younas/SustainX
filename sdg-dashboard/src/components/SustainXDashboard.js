@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, BarChart3, Users, Building, Droplets, Zap, Info, Database, Loader2, AlertCircle, RotateCcw, Heart, GraduationCap, Utensils, LogIn, LogOut, User, Filter, ChevronDown, Eye, Download, Plus, Edit, Trash2, Save, X, Settings } from 'lucide-react';
+import { Search, BarChart3, Users, Building, Droplets, Zap, Info, Database, Loader2, AlertCircle, RotateCcw, Heart, GraduationCap, Utensils, LogIn, LogOut, User, Filter, ChevronDown, Eye, Download, Plus, Edit, Trash2, Save, X, Settings, Menu } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 const SustainXDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -19,6 +19,10 @@ const SustainXDashboard = () => {
     page: 1,
     page_size: 20
   });
+  
+  // Navigation state
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Admin state
   const [showCityForm, setShowCityForm] = useState(false);
@@ -145,13 +149,52 @@ const SustainXDashboard = () => {
       margin: '0 auto',
       padding: '32px 20px',
       display: 'flex',
-      gap: '24px'
+      gap: '24px',
+      transition: 'margin-left 0.3s ease'
     },
     sidebar: {
       width: '280px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '24px'
+      gap: '24px',
+      transition: 'transform 0.3s ease',
+      position: 'relative'
+    },
+    sidebarHidden: {
+      transform: 'translateX(-100%)'
+    },
+    sidebarMobile: {
+      position: 'fixed',
+      top: '70px',
+      left: '0',
+      height: 'calc(100vh - 70px)',
+      backgroundColor: 'white',
+      zIndex: 1000,
+      boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+      padding: '20px',
+      overflowY: 'auto'
+    },
+    hamburgerButton: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '4px 6px',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      backgroundColor: 'transparent',
+      transition: 'background-color 0.3s',
+      marginLeft: '8px'
+    },
+    overlay: {
+      position: 'fixed',
+      top: '70px',
+      left: '0',
+      width: '100%',
+      height: 'calc(100vh - 70px)',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      zIndex: 999,
+      display: 'none'
     },
     card: {
       backgroundColor: 'white',
@@ -287,7 +330,9 @@ const SustainXDashboard = () => {
       fontSize: '14px',
       backgroundColor: 'white',
       outline: 'none',
-      cursor: 'pointer'
+      cursor: 'pointer',
+      maxHeight: '200px',
+      overflow: 'auto'
     },
     modal: {
       position: 'fixed',
@@ -464,29 +509,33 @@ const SustainXDashboard = () => {
     
     if (response.ok) {
       const result = await response.json();
-      if (result.success) {
-        setCities(result.cities || []);
-        return;
+      
+      // Handle different response formats
+      if (Array.isArray(result)) {
+        // Direct array response
+        setCities(result);
+      } else if (result.success && result.cities) {
+        // Wrapped response with success flag
+        setCities(result.cities);
+      } else if (result.results && Array.isArray(result.results)) {
+        // Paginated response
+        setCities(result.results);
+      } else if (result.data && Array.isArray(result.data)) {
+        // Data wrapper
+        setCities(result.data);
+      } else {
+        console.error('Unexpected API response format:', result);
+        setCities([]);
       }
+      return;
     }
     
-    // API not working yet, use actual cities from your database
-    // Go to your admin panel and copy the exact cities you have
-    console.log('Using database cities from admin panel');
-    setCities([
-      { city_id: 1, city_name: 'Dera Ismail KHAN', province: 'Punjab', urbanization_level: 'Urban' },
-      { city_id: 2, city_name: 'Dera Ghazi Khan', province: 'Punjab', urbanization_level: 'Urban' },
-      // Add more cities here that you see in your admin panel
-      // Copy the exact names from http://localhost:8000/admin/sdg_app/city/
-    ]);
+    console.error('Failed to fetch cities from API - Status:', response.status);
+    setCities([]);
     
   } catch (err) {
     console.error('Error fetching cities:', err);
-    // Use the cities from your admin panel
-    setCities([
-      { city_id: 1, city_name: 'Dera Ismail KHAN', province: 'Punjab', urbanization_level: 'Urban' },
-      { city_id: 2, city_name: 'Dera Ghazi Khan', province: 'Punjab', urbanization_level: 'Urban' }
-    ]);
+    setCities([]);
   }
 };
 
@@ -497,7 +546,7 @@ const SustainXDashboard = () => {
     2: ['malnutrition_rate', 'food_insecurity'], 
     3: ['access_to_healthcare', 'maternal_mortality', 'vaccination_coverage'],
     4: ['literacy_rate', 'school_enrollment', 'ict_access'],
-    6: ['access_to_clean_water', 'sanitation_coverage'],
+    6: ['acess_to_clean_water', 'sanitation_coverage'], // Note: 'acess' spelling matches database
     7: ['electricity_access', 'clean_fuel_use', 'renewable_energy_share'],
     11: ['air_quality_index', 'transport_access', 'infrastructure_score']
   };
@@ -702,13 +751,52 @@ const SustainXDashboard = () => {
     fetchCities();
   }, []);
 
+  // Handle responsive sidebar behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarVisible(true); // Always show on desktop
+      } else {
+        setSidebarVisible(false); // Hide by default on mobile
+      }
+    };
+
+    // Set initial state
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     if (activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && !isNaN(activeTab)) {
       fetchSDGData(activeTab);
     }
   }, [activeTab, filters]);
 
+  // Reset filters when changing SDG tabs
+  useEffect(() => {
+    if (activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && !isNaN(activeTab)) {
+      // Reset filters when switching to a different SDG
+      setFilters({
+        city: '',
+        year: '',
+        page: 1,
+        page_size: 20
+      });
+    }
+  }, [activeTab]);
+
   // Utility functions
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
+  };
+
   const applyFilters = () => {
     if (activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && !isNaN(activeTab)) {
       fetchSDGData(activeTab);
@@ -1087,7 +1175,13 @@ const SustainXDashboard = () => {
       }
 
       const sampleItem = filteredItems[0];
-      const columns = sampleItem ? Object.keys(sampleItem) : [];
+      // Filter out all ID columns from display
+      const allColumns = sampleItem ? Object.keys(sampleItem) : [];
+      const columns = allColumns.filter(column => 
+        !column.toLowerCase().includes('id') && 
+        !column.toLowerCase().includes('_id') &&
+        column !== 'id'
+      );
 
       return (
         <div>
@@ -1269,22 +1363,13 @@ const SustainXDashboard = () => {
     2: ['malnutrition_rate', 'food_insecurity'],
     3: ['access_to_healthcare', 'maternal_mortality', 'vaccination_coverage'],
     4: ['literacy_rate', 'school_enrollment', 'ict_access'],
-    6: ['access_to_clean_water', 'sanitation_coverage'],
+    6: ['acess_to_clean_water', 'sanitation_coverage'], // Note: 'acess' spelling matches database
     7: ['electricity_access', 'clean_fuel_use', 'renewable_energy_share'],
     11: ['air_quality_index', 'transport_access', 'infrastructure_score']
   };
 
   const sdgIndicators = indicators[sdgNumber] || [];
   const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22'];
-
-  // Debug: Log data to console
-  console.log('=== SDG', sdgNumber, 'Debug Info ===');
-  console.log('Total records:', chartData.length);
-  console.log('Expected indicators:', sdgIndicators);
-  if (chartData.length > 0) {
-    console.log('Sample data fields:', Object.keys(chartData[0]));
-    console.log('Sample record:', chartData[0]);
-  }
 
   // Process data for each indicator across all years
   const processIndicatorData = () => {
@@ -1625,17 +1710,6 @@ const SustainXDashboard = () => {
               </p>
             </div>
           </div>
-          
-          <div style={{
-            backgroundColor: '#e8f5e8',
-            color: '#27ae60',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: '500'
-          }}>
-            🔄 Auto-Updates When Data Added
-          </div>
         </div>
 
         {/* Overview Stats */}
@@ -1673,19 +1747,6 @@ const SustainXDashboard = () => {
               Total Records
             </div>
           </div>
-        </div>
-
-        {/* Debug Info */}
-        <div style={{
-          marginTop: '16px',
-          padding: '12px',
-          backgroundColor: '#fff3cd',
-          borderRadius: '6px',
-          fontSize: '12px',
-          color: '#856404'
-        }}>
-          <strong>Debug Info:</strong> Check browser console (F12) for field name details.
-          Expected indicators: {sdgIndicators.join(', ')}
         </div>
       </div>
 
@@ -1981,11 +2042,33 @@ return (
         </div>
       )}
 
+      {/* Mobile Overlay */}
+      {sidebarVisible && isMobile && (
+        <div 
+          style={{...styles.overlay, display: 'block'}} 
+          onClick={() => setSidebarVisible(false)}
+        />
+      )}
+
       <div style={styles.mainContent}>
         {/* Sidebar */}
-        <aside style={styles.sidebar}>
+        <aside style={{
+          ...styles.sidebar,
+          ...(isMobile ? styles.sidebarMobile : {}),
+          ...(!sidebarVisible ? styles.sidebarHidden : {})
+        }}>
           <nav style={styles.card}>
-            <h2 style={styles.cardTitle}>Navigation</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{...styles.cardTitle, marginBottom: '0'}}>Navigation</h2>
+              {isMobile && (
+                <button
+                  onClick={() => setSidebarVisible(false)}
+                  style={{...styles.hamburgerButton, padding: '4px'}}
+                >
+                  <X size={16} color="#7f8c8d" />
+                </button>
+              )}
+            </div>
             <ul style={styles.navList}>
               <li>
                 <button
@@ -2121,15 +2204,17 @@ return (
               
               <div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>City</label>
+                  <label style={styles.label}>City ({cities.length} available)</label>
                   <select
                     value={filters.city}
                     onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value, page: 1 }))}
                     style={styles.select}
                   >
                     <option value="">All Cities</option>
-                    {cities.map(city => (
-                      <option key={city.id} value={city.name}>{city.name}</option>
+                    {cities.map((city, index) => (
+                      <option key={city.city_id || index} value={city.city_name}>
+                        {city.city_name} {city.province ? `(${city.province})` : ''}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -2186,21 +2271,46 @@ return (
         </aside>
 
         {/* Main Content */}
-        <main style={styles.mainPanel}>
+        <main style={{
+          ...styles.mainPanel,
+          marginLeft: !isMobile && !sidebarVisible ? '-280px' : '0',
+          width: !isMobile && !sidebarVisible ? 'calc(100% + 280px)' : '100%',
+          transition: 'margin-left 0.3s ease, width 0.3s ease'
+        }}>
           <div style={styles.contentCard}>
             <div style={styles.contentHeader}>
-              <div>
-                <h2 style={styles.contentTitle}>
-  {activeTab === 'overview' ? 'SDG Overview' : 
-   activeTab === 'cities' ? 'Cities Management' :
-   activeTab === 'add-data' ? 'Add New Data' :
-   `📊 SDG ${activeTab}: ${sdgConfig[activeTab]?.name} - Charts & Data`}
-</h2>
-                {activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && sdgConfig[activeTab] && (
-                  <p style={styles.contentSubtitle}>
-                    {sdgConfig[activeTab].description}
-                  </p>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  onClick={toggleSidebar}
+                  style={{
+                    ...styles.hamburgerButton,
+                    padding: '6px',
+                    borderRadius: '6px',
+                    backgroundColor: '#ebf3fd'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#d6e9ff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#ebf3fd';
+                  }}
+                  title="Toggle Navigation"
+                >
+                  <Menu size={16} color="#3498db" />
+                </button>
+                <div>
+                  <h2 style={styles.contentTitle}>
+    {activeTab === 'overview' ? 'SDG Overview' : 
+     activeTab === 'cities' ? 'Cities Management' :
+     activeTab === 'add-data' ? 'Add New Data' :
+     `📊 SDG ${activeTab}: ${sdgConfig[activeTab]?.name} - Charts & Data`}
+  </h2>
+                  {activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && sdgConfig[activeTab] && (
+                    <p style={styles.contentSubtitle}>
+                      {sdgConfig[activeTab].description}
+                    </p>
+                  )}
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {activeTab !== 'overview' && activeTab !== 'cities' && activeTab !== 'add-data' && user && (
